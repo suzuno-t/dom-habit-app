@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・絶対動く版</title>
+    <title>ドM習慣アプリ・音声＆振動版</title>
     <style>
       body {
         font-family: sans-serif;
@@ -20,7 +20,7 @@
         border-radius: 5px;
         margin: 10px;
       }
-      .btn-auth {
+      .btn-test {
         background: #007bff;
         color: white;
       }
@@ -31,46 +31,62 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（絶対動く版）</h1>
+    <h1>ドM習慣アプリ（音声＆振動版）</h1>
 
-    <button id="auth-btn" class="btn-auth">1. 通知を許可する</button>
+    <button id="test-btn" class="btn-test">🔊 音声と振動のテスト</button>
     <br /><br />
-    <button id="start-btn" class="btn-start">2. 10秒のミッション開始</button>
+    <button id="start-btn" class="btn-start">⏱️ 10秒のミッション開始</button>
 
-    <p id="status-text">ボタンを押してね。</p>
+    <p id="status-text">カスペルスキーに負けないぞ！ボタンを押してね。</p>
 
     <script>
-      const authBtn = document.getElementById("auth-btn");
+      const testBtn = document.getElementById("test-btn");
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // 1. 通知の許可をもらう
-      authBtn.addEventListener("click", () => {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            statusText.innerText = "通知の許可OK！";
-            // 許可をもらった瞬間に、テストで1発軽い通知を飛ばす（これで道を開通させる！）
-            new Notification("接続テスト", { body: "いつでも罵れるわよ" });
-          }
-        });
+      // 罵倒セリフのリスト（スマホがこれを喋るよ！）
+      const batouMessages = [
+        "おい、10秒経ったぞ。いつまでサボってんだコラ！",
+        "やる気あんの？あんたの習慣化なんてその程度なんだね。",
+        "はいサボったー。一生そのままダラダラ過ごせば？",
+      ];
+
+      // 【魔法の関数】スマホを震わせて喋らせる
+      function playBatou(message) {
+        // 1. スマホを激しく震わせる（200ミリ秒振動 → 100ミリ秒休憩 → 200ミリ秒振動…のパターン）
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200, 100, 500]);
+        }
+
+        // 2. スマホに罵倒セリフを喋らせる
+        const speech = new SpeechSynthesisUtterance();
+        speech.text = message;
+        speech.lang = "ja-JP"; // 日本語
+        speech.rate = 1.1; // ちょっと早口で怒ってる感を出す（1.0が標準）
+        speech.pitch = 1.0; // 声の高さ（0.5〜2.0で変えられるよ）
+
+        window.speechSynthesis.speak(speech);
+      }
+
+      // 1. テストボタンを押したとき
+      testBtn.addEventListener("click", () => {
+        statusText.innerText = "テスト発射！";
+        playBatou("いつでも罵れる準備はできているわよ。");
       });
 
-      // 2. 10秒タイマー（一番シンプルな方法に戻したよ！）
+      // 2. 10秒タイマースタート
       startBtn.addEventListener("click", () => {
-        statusText.innerText =
-          "10秒数えるよ！画面を消さずに、そのまま10秒待ってみて！";
+        statusText.innerText = "10秒数えるよ！画面を開いたまま待っててね！";
 
-        // 10秒後に実行
         setTimeout(() => {
-          statusText.innerText = "10秒経ったぞ！";
+          // ランダムに罵倒を選ぶ
+          const randomIndex = Math.floor(Math.random() * batouMessages.length);
+          const message = batouMessages[randomIndex];
 
-          // 許可されていれば、ドカンと通知を出す！
-          if (Notification.permission === "granted") {
-            new Notification("【警告】サボり検知", {
-              body: "おい、10秒経ったぞ！いつまでサボってんだコラ！",
-              requireInteraction: true, // ユーザーが消すまで画面に残り続けるモード！
-            });
-          }
+          statusText.innerText = message;
+
+          // 罵倒発射！
+          playBatou(message);
         }, 10000);
       });
     </script>
