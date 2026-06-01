@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・安全予約版</title>
-    <link rel="manifest" href="manifest.json" />
+    <title>ドM習慣アプリ・絶対動く版</title>
     <style>
       body {
         font-family: sans-serif;
@@ -32,65 +31,47 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（安全予約版）</h1>
+    <h1>ドM習慣アプリ（絶対動く版）</h1>
 
-    <button id="auth-btn" class="btn-auth">1. もう一度通知を許可する</button>
+    <button id="auth-btn" class="btn-auth">1. 通知を許可する</button>
     <br /><br />
-    <button id="start-btn" class="btn-start">2. 10秒後の通知を予約する</button>
+    <button id="start-btn" class="btn-start">2. 10秒のミッション開始</button>
 
-    <p id="status-text">一度登録解除したから、もう一度許可してね！</p>
+    <p id="status-text">ボタンを押してね。</p>
 
     <script>
       const authBtn = document.getElementById("auth-btn");
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // 裏ボス（Service Worker）を登録
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("sw.js")
-          .then(() => console.log("裏ボス登録完了！"))
-          .catch((err) => console.error("エラー:", err));
-      }
-
-      // 1. もう一度通知を許可
+      // 1. 通知の許可をもらう
       authBtn.addEventListener("click", () => {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            statusText.innerText = "通知が新しく許可されたよ！";
-            alert("今度は怪しくない方法で通知するわ（許可完了）");
+            statusText.innerText = "通知の許可OK！";
+            // 許可をもらった瞬間に、テストで1発軽い通知を飛ばす（これで道を開通させる！）
+            new Notification("接続テスト", { body: "いつでも罵れるわよ" });
           }
         });
       });
 
-      // 2. 10秒後の通知をスマホに直接予約する
+      // 2. 10秒タイマー（一番シンプルな方法に戻したよ！）
       startBtn.addEventListener("click", () => {
         statusText.innerText =
-          "10秒後にスマホが直接通知を鳴らすよ。画面を消して待て！";
+          "10秒数えるよ！画面を消さずに、そのまま10秒待ってみて！";
 
-        if (Notification.permission === "granted") {
-          navigator.serviceWorker.ready.then((registration) => {
-            // 10秒後の時間を計算する
-            const triggerTime = Date.now() + 10000;
+        // 10秒後に実行
+        setTimeout(() => {
+          statusText.innerText = "10秒経ったぞ！";
 
-            // スマホのシステムに直接「10秒後にこれ出して！」と予約を預ける
-            registration
-              .showNotification("【警告】サボり検知", {
-                body: "おい、10秒経ったぞ！いつまでサボってんだコラ！",
-                tag: "sabori-alert",
-                renotify: true,
-                // ↓これが安全な予約の魔法のおまじない！
-                showTrigger: new TimestampTrigger(triggerTime),
-              })
-              .catch((err) => {
-                // もしスマホが最新の予約機能に対応してなかったら、裏技で出す
-                console.log("予約機能が使えないから、裏で直接出すね");
-                navigator.serviceWorker.controller.postMessage({
-                  delay: 10000,
-                });
-              });
-          });
-        }
+          // 許可されていれば、ドカンと通知を出す！
+          if (Notification.permission === "granted") {
+            new Notification("【警告】サボり検知", {
+              body: "おい、10秒経ったぞ！いつまでサボってんだコラ！",
+              requireInteraction: true, // ユーザーが消すまで画面に残り続けるモード！
+            });
+          }
+        }, 10000);
       });
     </script>
   </body>
