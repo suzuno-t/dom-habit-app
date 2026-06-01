@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・音声＆振動版</title>
+    <title>ドM習慣アプリ・バックグラウンド音声版</title>
+    <link rel="manifest" href="manifest.json" />
     <style>
       body {
         font-family: sans-serif;
@@ -20,10 +21,6 @@
         border-radius: 5px;
         margin: 10px;
       }
-      .btn-test {
-        background: #007bff;
-        color: white;
-      }
       .btn-start {
         background: #dc3545;
         color: white;
@@ -31,63 +28,54 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（音声＆振動版）</h1>
+    <h1>ドM習慣アプリ（画面を閉じても罵倒版）</h1>
 
-    <button id="test-btn" class="btn-test">🔊 音声と振動のテスト</button>
-    <br /><br />
-    <button id="start-btn" class="btn-start">⏱️ 10秒のミッション開始</button>
+    <button id="start-btn" class="btn-start">
+      ⏱️ 10秒後に裏から罵倒を仕掛ける
+    </button>
 
-    <p id="status-text">カスペルスキーに負けないぞ！ボタンを押してね。</p>
+    <p id="status-text">ボタンを押して、すぐ画面を消してみて！</p>
 
     <script>
-      const testBtn = document.getElementById("test-btn");
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // 罵倒セリフのリスト（スマホがこれを喋るよ！）
-      const batouMessages = [
-        "おい、10秒経ったぞ。いつまでサボってんだコラ！",
-        "やる気あんの？あんたの習慣化なんてその程度なんだね。",
-        "はいサボったー。一生そのままダラダラ過ごせば？",
-      ];
-
-      // 【魔法の関数】スマホを震わせて喋らせる
-      function playBatou(message) {
-        // 1. スマホを激しく震わせる（200ミリ秒振動 → 100ミリ秒休憩 → 200ミリ秒振動…のパターン）
-        if (navigator.vibrate) {
-          navigator.vibrate([200, 100, 200, 100, 500]);
-        }
-
-        // 2. スマホに罵倒セリフを喋らせる
-        const speech = new SpeechSynthesisUtterance();
-        speech.text = message;
-        speech.lang = "ja-JP"; // 日本語
-        speech.rate = 1.1; // ちょっと早口で怒ってる感を出す（1.0が標準）
-        speech.pitch = 1.0; // 声の高さ（0.5〜2.0で変えられるよ）
-
-        window.speechSynthesis.speak(speech);
+      // 裏ボス（Service Worker）の登録
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("sw.js")
+          .then(() => console.log("裏ボス準備完了！"))
+          .catch((err) => console.error(err));
       }
 
-      // 1. テストボタンを押したとき
-      testBtn.addEventListener("click", () => {
-        statusText.innerText = "テスト発射！";
-        playBatou("いつでも罵れる準備はできているわよ。");
-      });
+      // 裏ボス（sw.js）から「時間になったぞ」と連絡が来たら、表側で喋る魔法の仕組み
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data.action === "voice-batou") {
+            // スマホを震わせて喋らせる！
+            if (navigator.vibrate) {
+              navigator.vibrate([200, 100, 200, 100, 500]);
+            }
 
-      // 2. 10秒タイマースタート
+            const speech = new SpeechSynthesisUtterance();
+            speech.text = event.data.message;
+            speech.lang = "ja-JP";
+            speech.rate = 1.1;
+            window.speechSynthesis.speak(speech);
+
+            statusText.innerText = "裏から叩き起こされて罵られました。";
+          }
+        });
+      }
+
+      // ボタンを押したら、裏ボスに「10秒数えて！」と丸投げする
       startBtn.addEventListener("click", () => {
-        statusText.innerText = "10秒数えるよ！画面を開いたまま待っててね！";
+        statusText.innerText = "裏ボスに命令したよ！すぐ画面を消して待ってて！";
 
-        setTimeout(() => {
-          // ランダムに罵倒を選ぶ
-          const randomIndex = Math.floor(Math.random() * batouMessages.length);
-          const message = batouMessages[randomIndex];
-
-          statusText.innerText = message;
-
-          // 罵倒発射！
-          playBatou(message);
-        }, 10000);
+        if (navigator.serviceWorker.controller) {
+          // 裏ボスに「10秒（10000ミリ秒）数えろ」とデータを送る
+          navigator.serviceWorker.controller.postMessage({ delay: 10000 });
+        }
       });
     </script>
   </body>
