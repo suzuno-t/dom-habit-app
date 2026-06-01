@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・完全版</title>
-    <!-- ↓ここを追加したよ！これがないとAndroidがアプリとして認めてくれないんだ -->
+    <title>ドM習慣アプリ・安全予約版</title>
     <link rel="manifest" href="manifest.json" />
     <style>
       body {
@@ -33,62 +32,65 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（完全版）</h1>
+    <h1>ドM習慣アプリ（安全予約版）</h1>
 
-    <button id="auth-btn" class="btn-auth">1. まず通知を許可</button>
+    <button id="auth-btn" class="btn-auth">1. もう一度通知を許可する</button>
     <br /><br />
-    <button id="start-btn" class="btn-start">2. 10秒のミッション開始</button>
+    <button id="start-btn" class="btn-start">2. 10秒後の通知を予約する</button>
 
-    <p id="status-text">ボタンを押してミッションを始めてね。</p>
+    <p id="status-text">一度登録解除したから、もう一度許可してね！</p>
 
     <script>
       const authBtn = document.getElementById("auth-btn");
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      const batouMessages = [
-        "おい、10秒経ったぞ！いつまでサボってんだコラ！",
-        "やる気あんの？あんたの習慣化なんてその程度なんだね。",
-        "はいサボったー。一生そのままダラダラ過ごせば？",
-      ];
-
+      // 裏ボス（Service Worker）を登録
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("sw.js")
-          .then(() => console.log("裏ボスプログラム登録完了！"))
+          .then(() => console.log("裏ボス登録完了！"))
           .catch((err) => console.error("エラー:", err));
       }
 
-      // 1. 通知の許可
+      // 1. もう一度通知を許可
       authBtn.addEventListener("click", () => {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            alert("いつでも罵れるようになったわ（許可完了）");
+            statusText.innerText = "通知が新しく許可されたよ！";
+            alert("今度は怪しくない方法で通知するわ（許可完了）");
           }
         });
       });
 
-      // 2. タイマースタート
+      // 2. 10秒後の通知をスマホに直接予約する
       startBtn.addEventListener("click", () => {
         statusText.innerText =
-          "10秒以内にタスクを終わらせろ！画面を消して待て！";
+          "10秒後にスマホが直接通知を鳴らすよ。画面を消して待て！";
 
-        setTimeout(() => {
-          const randomIndex = Math.floor(Math.random() * batouMessages.length);
-          const message = batouMessages[randomIndex];
+        if (Notification.permission === "granted") {
+          navigator.serviceWorker.ready.then((registration) => {
+            // 10秒後の時間を計算する
+            const triggerTime = Date.now() + 10000;
 
-          if (Notification.permission === "granted") {
-            navigator.serviceWorker.ready.then((registration) => {
-              registration.showNotification("【警告】サボり検知", {
-                body: message,
+            // スマホのシステムに直接「10秒後にこれ出して！」と予約を預ける
+            registration
+              .showNotification("【警告】サボり検知", {
+                body: "おい、10秒経ったぞ！いつまでサボってんだコラ！",
                 tag: "sabori-alert",
                 renotify: true,
+                // ↓これが安全な予約の魔法のおまじない！
+                showTrigger: new TimestampTrigger(triggerTime),
+              })
+              .catch((err) => {
+                // もしスマホが最新の予約機能に対応してなかったら、裏技で出す
+                console.log("予約機能が使えないから、裏で直接出すね");
+                navigator.serviceWorker.controller.postMessage({
+                  delay: 10000,
+                });
               });
-            });
-          }
-
-          statusText.innerText = "サボったな！通知を確認しろ！";
-        }, 10000);
+          });
+        }
       });
     </script>
   </body>
