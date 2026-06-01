@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ドM習慣アプリ・通知テスト</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        text-align: center;
+        padding-top: 50px;
+      }
+      button {
+        padding: 15px 30px;
+        font-size: 18px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ドM習慣アプリ（テスト版）</h1>
+    <p>まずは下のボタンを押して、通知を許可してね！</p>
+
+    <!-- 通知を許可してもらうためのボタン -->
+    <button id="auth-btn">通知を許可する</button>
+
+    <script>
+      const authBtn = document.getElementById("auth-btn");
+
+      authBtn.addEventListener("click", () => {
+        // スマホやブラウザに「通知していい？」って聞く魔法のコード
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            alert("ありがと！これでいつでも罵れるわ（許可完了）");
+
+            // 試しに今すぐテスト通知を飛ばしてみる
+            new Notification("サボるな！", {
+              body: "24時間監視してるからね。早くタスクを登録しなさい！",
+            });
+          } else {
+            alert("通知が拒否されたよ。設定から許可してね");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
