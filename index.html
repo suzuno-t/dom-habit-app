@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・音楽プレイヤー版</title>
+    <title>ドM習慣アプリ・初心に返る通知版</title>
+    <link rel="manifest" href="manifest.json" />
     <style>
       body {
         font-family: sans-serif;
@@ -20,6 +21,10 @@
         border-radius: 5px;
         margin: 10px;
       }
+      .btn-auth {
+        background: #007bff;
+        color: white;
+      }
       .btn-start {
         background: #dc3545;
         color: white;
@@ -27,60 +32,53 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（音楽プレイヤー作戦）</h1>
+    <h1>ドM習慣アプリ（初心に返る通知版）</h1>
 
+    <button id="auth-btn" class="btn-auth">1. 通知の最終テスト</button>
+    <br /><br />
     <button id="start-btn" class="btn-start">
-      ⏱️ 10秒ミッション開始（スリープOK）
+      2. 10秒後に罵倒通知を飛ばす
     </button>
 
-    <p id="status-text">ボタンを押して、すぐ画面を消してみて！</p>
+    <p id="status-text">設定で許可してくれたから、今度こそいけるはず！</p>
 
     <script>
+      const authBtn = document.getElementById("auth-btn");
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // スマホに怒られないための罵倒関数
-      function playVoice() {
-        const batouMessages = [
-          "おい、10秒経ったぞ！いつまでサボってんだコラ！",
-          "やる気あんの？あんたの習慣化なんてその程度なんだね。",
-          "はいサボったー。一生そのままダラダラ過ごせば？",
-        ];
-        const randomIndex = Math.floor(Math.random() * batouMessages.length);
-
-        const speech = new SpeechSynthesisUtterance();
-        speech.text = batouMessages[randomIndex];
-        speech.lang = "ja-JP";
-        speech.rate = 1.1;
-        window.speechSynthesis.speak(speech);
+      // 裏ボスを再登録
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("sw.js")
+          .then(() => console.log("裏ボス復活！"))
+          .catch((err) => console.error(err));
       }
 
+      // 1. 最終テストボタン
+      authBtn.addEventListener("click", () => {
+        if (Notification.permission === "granted") {
+          new Notification("接続テスト成功！", {
+            body: "スマホの許可リストに入ったわよ！",
+          });
+        } else {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              alert("許可されたよ！");
+            }
+          });
+        }
+      });
+
+      // 2. タイマー（裏ボスにお願いして通知を出す）
       startBtn.addEventListener("click", () => {
-        statusText.innerText = "音楽プレイヤーモード起動！画面を消して待て！";
+        statusText.innerText =
+          "裏に時限爆弾を仕掛けたよ。画面を消して10秒待て！";
 
-        // Web Audio API という、スマホの「本物の音楽機能」を起動するよ（不正扱いされない！）
-        const audioCtx = new (
-          window.AudioContext || window.webkitAudioContext
-        )();
-
-        // 10秒間の「無音」の音楽データをその場で作る
-        const buffer = audioCtx.createBuffer(
-          1,
-          audioCtx.sampleRate * 10,
-          audioCtx.sampleRate,
-        );
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-
-        // 10秒後に音楽が終わったら、自動的に罵倒を発射する！
-        source.onended = () => {
-          playVoice();
-          statusText.innerText = "サボり検知！";
-        };
-
-        // 音楽スタート！
-        source.start();
+        if (navigator.serviceWorker.controller) {
+          // 裏ボス（sw.js）に10秒後に通知を出してと頼む
+          navigator.serviceWorker.controller.postMessage({ delay: 10000 });
+        }
       });
     </script>
   </body>
