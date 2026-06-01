@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・タイマーテスト</title>
+    <title>ドM習慣アプリ・Android突破版</title>
     <style>
       body {
         font-family: sans-serif;
@@ -31,7 +31,7 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（タイマー実験）</h1>
+    <h1>ドM習慣アプリ（Android突破版）</h1>
 
     <button id="auth-btn" class="btn-auth">1. まず通知を許可</button>
     <br /><br />
@@ -44,12 +44,19 @@
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // 罵倒メッセージのリスト（ここを後で増やせるよ！）
       const batouMessages = [
         "おい、10秒経ったぞ！いつまでサボってんだコラ！",
         "やる気あんの？あんたの習慣化なんてその程度なんだね。",
         "はいサボったー。一生そのままダラダラ過ごせば？",
       ];
+
+      // 裏ボスプログラム（Service Worker）を登録する設定
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("sw.js")
+          .then(() => console.log("裏ボスプログラム登録完了！"))
+          .catch((err) => console.error("エラー:", err));
+      }
 
       // 1. 通知の許可
       authBtn.addEventListener("click", () => {
@@ -63,19 +70,22 @@
       // 2. タイマースタート
       startBtn.addEventListener("click", () => {
         statusText.innerText =
-          "10秒以内にタスクを終わらせろ！カウントダウン開始...";
+          "10秒以内にタスクを終わらせろ！画面を消して待て！";
 
-        // 10秒（10000ミリ秒）後に、勝手に動くタイマーをセット
         setTimeout(() => {
-          // ランダムに罵倒メッセージを1つ選ぶ
           const randomIndex = Math.floor(Math.random() * batouMessages.length);
           const message = batouMessages[randomIndex];
 
-          // スマホに罵倒通知を飛ばす！
-          new Notification("【警告】サボり検知", {
-            body: message,
-            icon: "https://via.placeholder.com/128", // 後で好きなアイコン画像に変えられるよ
-          });
+          // Androidで画面が消えていても確実に通知を出す書き方にパワーアップ！
+          if (Notification.permission === "granted") {
+            navigator.serviceWorker.ready.then((registration) => {
+              registration.showNotification("【警告】サボり検知", {
+                body: message,
+                tag: "sabori-alert",
+                renotify: true,
+              });
+            });
+          }
 
           statusText.innerText = "サボったな！通知を確認しろ！";
         }, 10000);
