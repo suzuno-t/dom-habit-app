@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ドM習慣アプリ・バックグラウンド音声版</title>
-    <link rel="manifest" href="manifest.json" />
+    <title>ドM習慣アプリ・音楽プレイヤー版</title>
     <style>
       body {
         font-family: sans-serif;
@@ -28,10 +27,10 @@
     </style>
   </head>
   <body>
-    <h1>ドM習慣アプリ（画面を閉じても罵倒版）</h1>
+    <h1>ドM習慣アプリ（音楽プレイヤー作戦）</h1>
 
     <button id="start-btn" class="btn-start">
-      ⏱️ 10秒後に裏から罵倒を仕掛ける
+      ⏱️ 10秒ミッション開始（スリープOK）
     </button>
 
     <p id="status-text">ボタンを押して、すぐ画面を消してみて！</p>
@@ -40,42 +39,48 @@
       const startBtn = document.getElementById("start-btn");
       const statusText = document.getElementById("status-text");
 
-      // 裏ボス（Service Worker）の登録
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("sw.js")
-          .then(() => console.log("裏ボス準備完了！"))
-          .catch((err) => console.error(err));
+      // スマホに怒られないための罵倒関数
+      function playVoice() {
+        const batouMessages = [
+          "おい、10秒経ったぞ！いつまでサボってんだコラ！",
+          "やる気あんの？あんたの習慣化なんてその程度なんだね。",
+          "はいサボったー。一生そのままダラダラ過ごせば？",
+        ];
+        const randomIndex = Math.floor(Math.random() * batouMessages.length);
+
+        const speech = new SpeechSynthesisUtterance();
+        speech.text = batouMessages[randomIndex];
+        speech.lang = "ja-JP";
+        speech.rate = 1.1;
+        window.speechSynthesis.speak(speech);
       }
 
-      // 裏ボス（sw.js）から「時間になったぞ」と連絡が来たら、表側で喋る魔法の仕組み
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data.action === "voice-batou") {
-            // スマホを震わせて喋らせる！
-            if (navigator.vibrate) {
-              navigator.vibrate([200, 100, 200, 100, 500]);
-            }
-
-            const speech = new SpeechSynthesisUtterance();
-            speech.text = event.data.message;
-            speech.lang = "ja-JP";
-            speech.rate = 1.1;
-            window.speechSynthesis.speak(speech);
-
-            statusText.innerText = "裏から叩き起こされて罵られました。";
-          }
-        });
-      }
-
-      // ボタンを押したら、裏ボスに「10秒数えて！」と丸投げする
       startBtn.addEventListener("click", () => {
-        statusText.innerText = "裏ボスに命令したよ！すぐ画面を消して待ってて！";
+        statusText.innerText = "音楽プレイヤーモード起動！画面を消して待て！";
 
-        if (navigator.serviceWorker.controller) {
-          // 裏ボスに「10秒（10000ミリ秒）数えろ」とデータを送る
-          navigator.serviceWorker.controller.postMessage({ delay: 10000 });
-        }
+        // Web Audio API という、スマホの「本物の音楽機能」を起動するよ（不正扱いされない！）
+        const audioCtx = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+
+        // 10秒間の「無音」の音楽データをその場で作る
+        const buffer = audioCtx.createBuffer(
+          1,
+          audioCtx.sampleRate * 10,
+          audioCtx.sampleRate,
+        );
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+
+        // 10秒後に音楽が終わったら、自動的に罵倒を発射する！
+        source.onended = () => {
+          playVoice();
+          statusText.innerText = "サボり検知！";
+        };
+
+        // 音楽スタート！
+        source.start();
       });
     </script>
   </body>
